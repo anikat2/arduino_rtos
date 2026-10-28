@@ -49,10 +49,10 @@ uint8_t* build_initial_stack(uint8_t* top, uint16_t entry_word, uint16_t arg_wor
     push_byte(sp, 0x80);
 
 #if defined(__AVR_HAVE_RAMPZ__)
-    push_byte(sp, 0x00); /* RAMPZ */
+    push_byte(sp, 0x00);
 #endif
 #if defined(__AVR_3_BYTE_PC__)
-    push_byte(sp, 0x00); /* EIND */
+    push_byte(sp, 0x00);
 #endif
 
     for (uint8_t reg = 1; reg <= 31; reg++) {
