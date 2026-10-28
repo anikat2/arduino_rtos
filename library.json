@@ -1,0 +1,12 @@
+{
+  "name": "arduino_rtos",
+  "version": "0.1.0",
+  "description": "small preemptive priority RTOS for AVR Arduino",
+  "keywords": "rtos, arduino, avr",
+  "frameworks": "arduino",
+  "platforms": "atmelavr",
+  "build": {
+    "includeDir": "include",
+    "srcDir": "src"
+  }
+}
