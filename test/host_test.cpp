@@ -46,6 +46,35 @@ static void test_priority_and_rotation() {
     EXPECT(select_ready(tasks, 0, -1) == -1);
 }
 
+static void test_mlfq() {
+    EXPECT(mlfq_slice(2, 2) == 2);
+    EXPECT(mlfq_slice(2, 1) == 4);
+    EXPECT(mlfq_slice(2, 0) == 8);
+    EXPECT(mlfq_slice(6, 0) == 16);
+
+    MlfqLevel motor{2, 2, 2};
+    mlfq_account(&motor, 1);
+    EXPECT(motor.priority == 2);
+    EXPECT(motor.quantum == 1);
+    mlfq_account(&motor, 1);
+    EXPECT(motor.priority == 1);
+    EXPECT(motor.quantum == 4);
+
+    mlfq_account(&motor, 0);
+    EXPECT(motor.priority == 1);
+    EXPECT(motor.quantum == 4);
+
+    motor.priority = 0;
+    motor.quantum = 1;
+    mlfq_account(&motor, 1);
+    EXPECT(motor.priority == 0);
+    EXPECT(motor.quantum == 8);
+
+    mlfq_boost(&motor);
+    EXPECT(motor.priority == 2);
+    EXPECT(motor.quantum == 2);
+}
+
 static void test_initial_stack() {
     uint8_t mem[80];
     memset(mem, 0xAB, sizeof(mem));
@@ -78,6 +107,7 @@ static void test_initial_stack() {
 
 int main() {
     test_priority_and_rotation();
+    test_mlfq();
     test_initial_stack();
     if (failures != 0) {
         printf("%d failure(s)\n", failures);

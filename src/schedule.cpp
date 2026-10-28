@@ -31,6 +31,43 @@ int8_t select_ready(const SchedView* tasks, uint8_t count, int8_t current) {
     return best;
 }
 
+uint8_t mlfq_slice(uint8_t base_priority, uint8_t priority) {
+    uint8_t slice = MLFQ_TOP_SLICE;
+    if (priority > base_priority) {
+        return slice;
+    }
+    uint8_t drop = (uint8_t)(base_priority - priority);
+    while (drop > 0 && slice < MLFQ_MAX_SLICE) {
+        slice = (uint8_t)(slice * 2);
+        drop--;
+    }
+    return slice;
+}
+
+void mlfq_account(MlfqLevel* level, uint8_t used_tick) {
+    if (level->priority > level->base_priority) {
+        level->priority = level->base_priority;
+    }
+    if (used_tick == 0) {
+        level->quantum = mlfq_slice(level->base_priority, level->priority);
+        return;
+    }
+    if (level->quantum > 0) {
+        level->quantum--;
+    }
+    if (level->quantum == 0) {
+        if (level->priority > 0) {
+            level->priority--;
+        }
+        level->quantum = mlfq_slice(level->base_priority, level->priority);
+    }
+}
+
+void mlfq_boost(MlfqLevel* level) {
+    level->priority = level->base_priority;
+    level->quantum = mlfq_slice(level->base_priority, level->priority);
+}
+
 static void push_byte(uint8_t*& sp, uint8_t value) {
     *sp = value;
     --sp;

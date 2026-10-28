@@ -3,7 +3,6 @@
 
 RTOS rtos;
 
-/* Runs ahead of telemetry. delay() leaves gaps so the lower task can run. */
 void motor_control(void*) {
     pinMode(LED_BUILTIN, OUTPUT);
     for (;;) {

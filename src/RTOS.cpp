@@ -1,7 +1,7 @@
 #include "rtos/RTOS.h"
 
 #ifndef __AVR__
-#error "This RTOS context switch targets AVR Arduino boards."
+#error "this RTOS context switch targets AVR Arduino boards."
 #endif
 
 #include "rtos/schedule.h"
@@ -12,7 +12,7 @@
 #include <string.h>
 
 #ifndef F_CPU
-#error "F_CPU must be defined. The Arduino build sets it from the board clock."
+#error "F_CPU must be defined. the Arduino build sets it from the board clock."
 #endif
 
 static_assert(STACK_SIZE >= 48, "STACK_SIZE is smaller than a saved context");
@@ -22,12 +22,6 @@ static_assert(sizeof(void (*)(void*)) == sizeof(uint16_t), "AVR function pointer
 static RTOS* g_rtos = nullptr;
 static SchedView schedule_view[MAX_TASKS];
 
-/*
- * Context frame, top of stack last:
- *   PC low, PC high, [PC high byte on 3-byte devices],
- *   r0, SREG, [RAMPZ], [EIND], r1..r31
- * RET pops the PC high byte first. RAMPZ then EIND matches build_initial_stack().
- */
 #if defined(__AVR_HAVE_RAMPZ__) && defined(__AVR_3_BYTE_PC__)
 #define SAVE_EXTRA \
     "in r0, 0x3B\n\t" \
@@ -325,6 +319,7 @@ uint16_t RTOS::onSwitch(uint16_t saved_sp, uint8_t from_tick) {
         }
     }
 
+    bool gave_up_cpu = (from_tick == 0) || (sleep_task == current);
     if (sleep_task != nullptr) {
         Task* sleeping = sleep_task;
         uint16_t ms = sleep_ms;
@@ -333,6 +328,25 @@ uint16_t RTOS::onSwitch(uint16_t saved_sp, uint8_t from_tick) {
             sleeping->delay_remaining = ms;
             sleeping->state = TaskState::Blocked;
         }
+    }
+
+    if (from_tick && (tick_count % MLFQ_BOOST_TICKS) == 0) {
+        for (uint8_t i = 0; i < task_count; i++) {
+            if (tasks[i].state == TaskState::Terminated) {
+                continue;
+            }
+            MlfqLevel level{tasks[i].priority, tasks[i].base_priority, tasks[i].quantum};
+            mlfq_boost(&level);
+            tasks[i].priority = level.priority;
+            tasks[i].quantum = level.quantum;
+        }
+    }
+
+    if (current_index >= 0 && current->state != TaskState::Terminated) {
+        MlfqLevel level{current->priority, current->base_priority, current->quantum};
+        mlfq_account(&level, gave_up_cpu ? 0 : 1);
+        current->priority = level.priority;
+        current->quantum = level.quantum;
     }
 
     if (current->state == TaskState::Running) {

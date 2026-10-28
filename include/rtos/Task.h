@@ -2,6 +2,10 @@
 
 #include <stdint.h>
 
+#define MLFQ_TOP_SLICE 2
+#define MLFQ_MAX_SLICE 16
+#define MLFQ_BOOST_TICKS 100
+
 enum class TaskState : uint8_t {
     Ready,
     Running,
@@ -17,6 +21,8 @@ class Task {
 
 private:
     uint8_t priority;
+    uint8_t base_priority;
+    uint8_t quantum;
     TaskState state;
     uint16_t delay_remaining;
     uint8_t stack_capacity;
@@ -29,6 +35,8 @@ private:
 public:
     Task()
     : priority{0},
+      base_priority{0},
+      quantum{MLFQ_TOP_SLICE},
       state{TaskState::Terminated},
       delay_remaining{0},
       stack_capacity{0},
@@ -46,6 +54,8 @@ public:
         uint8_t stack_capacity,
         uint8_t priority
     ) : priority{priority},
+        base_priority{priority},
+        quantum{MLFQ_TOP_SLICE},
         state{TaskState::Ready},
         delay_remaining{0},
         stack_capacity{stack_capacity},
@@ -56,6 +66,7 @@ public:
         arg{arg} {}
 
     uint8_t getPriority() const;
+    uint8_t getBasePriority() const;
     void setPriority(uint8_t priority);
 
     TaskState getState() const;
