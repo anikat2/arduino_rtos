@@ -28,7 +28,7 @@ static SchedView schedule_view[MAX_TASKS];
  *   r0, SREG, [RAMPZ], [EIND], r1..r31
  * RET pops the PC high byte first. RAMPZ then EIND matches build_initial_stack().
  */
-#if defined(__AVR_HAVE_RAMPZ__) && defined(__AVR_HAVE_EIND__)
+#if defined(__AVR_HAVE_RAMPZ__) && defined(__AVR_3_BYTE_PC__)
 #define SAVE_EXTRA \
     "in r0, 0x3B\n\t" \
     "push r0\n\t" \
@@ -46,7 +46,7 @@ static SchedView schedule_view[MAX_TASKS];
 #define RESTORE_EXTRA \
     "pop r0\n\t" \
     "out 0x3B, r0\n\t"
-#elif defined(__AVR_HAVE_EIND__)
+#elif defined(__AVR_3_BYTE_PC__)
 #define SAVE_EXTRA \
     "in r0, 0x3C\n\t" \
     "push r0\n\t"
